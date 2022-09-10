@@ -1,1 +1,0 @@
-# sqlalchemy-django-orm-like
