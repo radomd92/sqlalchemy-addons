@@ -32,8 +32,8 @@ class Manager:
         """
         return [col.key for col in inspect(cls).mapper.column_attrs]
 
-    def describe(self, include_rel=False, format_='json'):
-        raise NotImplementedError('Not implemented yet')
+    def describe(self, include_rel=False, format_="json"):
+        raise NotImplementedError("Not implemented yet")
 
     def as_json(self, include_rel: bool):
         """
@@ -41,7 +41,10 @@ class Manager:
         :return: dict
         """
         result = {}
-        [result.update({col: getattr(self, col)}) for col in self.get_class().get_simple_column()]
+        [
+            result.update({col: getattr(self, col)})
+            for col in self.get_class().get_simple_column()
+        ]
         if include_rel:
             # TODO: Implement the method in the next release
             pass
@@ -55,13 +58,14 @@ class Manager:
         :return: The instance of the cls
         """
         logging.info(
-            f'Adding object {cls} to db', extra={
-                'data': values,
+            f"Adding object {cls} to db",
+            extra={
+                "data": values,
             },
         )
         obj = cls(**values)
         cls.db_context.session.add(obj)  # ID is not commit without dbService
-        logging.info(f'{cls} is being add to the DB', extra={'objects': [str(obj)]})
+        logging.info(f"{cls} is being add to the DB", extra={"objects": [str(obj)]})
         return obj
 
     @classmethod
@@ -75,7 +79,7 @@ class Manager:
             obj_collections = list(map(lambda data: cls(**data), data_collections))
             cls.db_context.session.bulk_save_objects(obj_collections)
         else:
-            logging.info('No data to add')
+            logging.info("No data to add")
 
     @classmethod
     def all(cls):
@@ -93,9 +97,11 @@ class Manager:
         data = cls.filter(**conditions)
         if data:
             if len(data) > 1:
-                raise ValueError("The conditions provided has returned multiple result. It's not allowed")
+                raise ValueError(
+                    "The conditions provided has returned multiple result. It's not allowed",
+                )
 
-            logging.debug(f'Found : {data[0]}')
+            logging.debug(f"Found : {data[0]}")
             return data[0]
 
     @classmethod
@@ -126,8 +132,9 @@ class Manager:
 
         data = cls._filter(bool_clause, **conditions).all()
         logging.debug(
-            f'{len(data)} {str(cls)} retrieved from database.', extra={
-                'data_retrieved': list(map(str, data)),
+            f"{len(data)} {str(cls)} retrieved from database.",
+            extra={
+                "data_retrieved": list(map(str, data)),
             },
         )
         return data
@@ -154,15 +161,19 @@ class Manager:
         :return:
         """
         if filter_none:
-            logging.debug(f'Filtering None values in filter to get {self.__str__()} object')
-            field_to_update = {k: v for k, v in field_to_update.items() if v is not None}
+            logging.debug(
+                f"Filtering None values in filter to get {self.__str__()} object",
+            )
+            field_to_update = {
+                k: v for k, v in field_to_update.items() if v is not None
+            }
 
         for field, value in field_to_update.items():
             if not hasattr(self, field):
-                logging.warning('The current object has not this fields')
+                logging.warning("The current object has not this fields")
                 continue
 
-            logging.debug(f'Setting attribute {field}:{value}')
+            logging.debug(f"Setting attribute {field}:{value}")
             setattr(self, field, value)
 
         self.db_context.session.flush()
