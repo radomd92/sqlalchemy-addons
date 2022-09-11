@@ -17,7 +17,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.operators import ColumnOperators
 
 from db.operators import And
-from db.operators import BooleanOperator
 from db.operators import Or
 from utils import _lookup_model_foreign_key
 from utils import _lookup_model_manytomany_rel

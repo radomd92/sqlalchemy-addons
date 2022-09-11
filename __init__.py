@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from sqlalchemy.orm import declarative_base
-
 from context import DBContext
 from db.settings import DBSettings
 from manager import Manager
