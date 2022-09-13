@@ -15,12 +15,14 @@ class DriverEnum(str, Enum):
 
 class DBSettings(BaseSettings):
     driver: DriverEnum
-    host: str
-    port: str
-    name: str
-    username: str
-    password: str
+    host: str = None
+    port: str = None
+    name: str = None
+    username: str = None
+    password: str = None
     auto_commit: bool = True
+    is_test: bool = False
+    sqlite_db_path: str = "./db.sqlite3"
     error_handler: Optional[PyObject]
 
     class Config:

@@ -24,8 +24,10 @@ from utils import get_model_attrs
 from utils import get_model_from_rel
 
 
-class BaseQueryBuilder(object):
-    def __init__(self, base_model, bool_clause: Union[And, Or], session: Session):
+class BaseQueryBuilder:
+    def __init__(
+        self, base_model: object, bool_clause: Union[And, Or], session: Session
+    ):
         if not bool_clause:
             raise ValueError("Resolving path cannot be None")
 

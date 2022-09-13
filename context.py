@@ -10,6 +10,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from db.settings import DBSettings
+from db.settings import DriverEnum
 from logger import logger as logging
 
 
@@ -24,22 +25,34 @@ class DBContextMeta(type):
 
 
 class DBContext(metaclass=DBContextMeta):
-    def __init__(self, settings: DBSettings):
+    def __init__(self, settings: DBSettings = None):
         self._engine = None
         self._session: Union[Session, None] = None
         self._settings = settings.dict()
 
     def setup_engine(self) -> Union[Engine, None]:
+        if not self._settings:
+            raise ValueError("Cannot setup engine without settings")
+
+        driver = self._settings.get("driver")
+
         try:
             logging.info("Setting up new engine")
-            engine_ = create_engine(
-                f"{self._settings.get('driver')}://{self._settings.get('username')}:{self._settings.get('password')}@{self._settings.get('host')}"
-                f":{self._settings.get('port')}/{self._settings.get('name')}",
-                echo=True,
-                future=True,
-                pool_size=self._settings.get("DB_MAX_POOL", 10),
-                pool_pre_ping=True,
-            )
+            if driver in [DriverEnum.MYSQL, DriverEnum.POSTGRES]:
+
+                engine_ = create_engine(
+                    f"{driver}://{self._settings.get('username')}:{self._settings.get('password')}@{self._settings.get('host')}"
+                    f":{self._settings.get('port')}/{self._settings.get('name')}",
+                    echo=True,
+                    future=True,
+                    pool_size=self._settings.get("DB_MAX_POOL", 10),
+                    pool_pre_ping=True,
+                )
+            else:
+                engine_ = create_engine(
+                    f"{driver}://{'/:memory:' if self._settings.get('is_test') else self._settings.get('sqlite_db_path')}"
+                )
+
             engine_.connect()
             self._engine = engine_
             return engine_

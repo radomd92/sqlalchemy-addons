@@ -6,7 +6,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy.orm import relationship
 
-from base import base_model
+from tests.conftest import base_model
 
 
 class User(base_model):
