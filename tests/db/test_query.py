@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import unittest
-from unittest import TestCase
-
 import pytest
 from sqlalchemy.orm import Query
 
@@ -31,16 +28,30 @@ class TestBaseQueryBuilder:
 
     @pytest.mark.parametrize(
         "operator,expected",
-        [],
+        [
+            ("ge", "__ge__"),
+            ("le", "__le__"),
+            ("lt", "__lt__"),
+            ("ne", "__ne__"),
+            ("not_in", "not_in"),
+            ("between", "between"),
+            ("like", "like"),
+            ("ilike", "ilike"),
+            ("not_like", "not_like"),
+            ("endswith", "endswith"),
+            ("startswith", "startswith"),
+            ("is_not", "is_not"),
+            ("isnot_distinct_from", "isnot_distinct_from"),
+            ("is", "is_"),
+            ("in", "in_"),
+        ],
     )
-    def test_get_operator_success(self, test_context):
+    def test_get_operator_success(self, operator, expected, test_context):
         """
         test if a given operator at the end of a filter is supported by SQLAlchemy
         Eg: column1__exact=value -> operator is 'exact'
         """
-        operator_list = ["like", "in", "between", "contains", "ilike"]
-        result = list(map(BaseQueryBuilder.get_operator, operator_list))
-        assert True == all(result)
+        assert expected == BaseQueryBuilder.get_operator(operator)
 
     def test_make_filter(self):
         self.fail()
