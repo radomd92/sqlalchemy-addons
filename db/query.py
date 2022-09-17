@@ -2,13 +2,9 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Dict
-from typing import Tuple
 from typing import Union
 
-from sqlalchemy import Column
 from sqlalchemy import inspect
-from sqlalchemy import Table
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import InstrumentedAttribute
@@ -104,7 +100,7 @@ class BaseQueryBuilder:
 
     def run_search(self, operand: Union[And, Or]):
         """
-        Complex expression are which are wrapped into And or Or operator such as: And(column1__like=value, column2__...)
+        Complex expression are which are wrapped into 'And' or 'Or' operator such as: And(column1__like=value, column2__...)
         :return:
         """
         for complex_expression in operand.wrapped_expression:
@@ -242,7 +238,7 @@ class BaseQueryBuilder:
         if next_model is None or next_model == []:
             if (
                 path
-            ):  # If we didn't reached the last element of the path without any model, it's an error
+            ):  # If we didn't reach the last element of the path without any model, it's an error
                 raise InvalidRequestError(f"Unable to find {field} field in {model}")
             else:
                 return result, field

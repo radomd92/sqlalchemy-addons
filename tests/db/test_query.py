@@ -10,6 +10,7 @@ from tests.models import User
 
 
 @pytest.mark.usefixtures("test_context")
+@pytest.mark.usefixtures("query_with_join")
 class TestBaseQueryBuilder:
     def test_base_query_builder_init(self, test_context):
         query_with_and = BaseQueryBuilder(
