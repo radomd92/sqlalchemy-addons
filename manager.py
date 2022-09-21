@@ -156,7 +156,7 @@ class Manager:
     def update(self, filter_none=True, **field_to_update):
         """
         Update current instance.
-        :param filter_none: Remove None value from field_to_update if true
+        :param filter_none: Remove None from field_to_update if true
         :param field_to_update: all fields that you want update in target model
         :return:
         """

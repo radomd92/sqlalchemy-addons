@@ -6,7 +6,6 @@ identify==2.5.5
 jsonformatter==0.3.1
 nodeenv==1.7.0
 platformdirs==2.5.2
-pre-commit==2.20.0
 psycopg2==2.9.3
 pydantic==1.10.2
 PyYAML==6.0

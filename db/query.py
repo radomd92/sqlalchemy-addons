@@ -1,23 +1,27 @@
 from __future__ import annotations
 
 import copy
-import logging
+from typing import Any
+from typing import Dict
+from typing import List
 from typing import Union
 
 from sqlalchemy import inspect
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import InstrumentedAttribute
+from sqlalchemy.orm import Query
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.operators import ColumnOperators
 
 from db.operators import And
 from db.operators import Or
+from logger import logger as logging
 from utils import _lookup_model_foreign_key
 from utils import _lookup_model_manytomany_rel
 from utils import get_model_attrs
 from utils import get_model_from_rel
+from utils import get_operator
 
 
 class BaseQueryBuilder:
@@ -34,34 +38,22 @@ class BaseQueryBuilder:
         self.base_query = session.query(base_model)
         self.complex_filter_clause = bool_clause
 
-    @staticmethod
-    def get_operator(operator):
-        """
-        Given a filtering_path, return the intended operator
-        :param operator:
-        :return:
-        """
-
-        ope_attr = list(
-            filter(
-                lambda e: hasattr(ColumnOperators, e.format(operator)),
-                ["{}", "{}_", "__{}__"],
-            ),
-        )
-        if ope_attr:
-            return ope_attr[0].format(operator)
-
+    # noinspection PyNoneFunctionAssignment
     def make_filter(self):
         """
         Put all together (make in one shot the filter)
         :return: SQLAlchemy Expression
         """
         expressions = self.build_final_filter_expression()
-        logging.info(expressions)
+        query: Union[Query, None] = self.base_query.filter(expressions)
 
-        return self.base_query.filter(expressions)
+        logging.info(
+            f"Resulting query is: {query.statement.compile(compile_kwargs={'literal_binds': True})}"
+        )
+        return query
 
-    def build_expression(self, model, field, operator_name, value):
+    @staticmethod
+    def build_expression(model, field, operator_name, value):
         """
         Build the expression for the current field_path that will be used in the filter() of baseQuery
         :param operator_name:
@@ -76,9 +68,9 @@ class BaseQueryBuilder:
         if not column:
             raise Exception("Invalid filter column")
 
-        operator = self.get_operator(operator_name)
+        operator = get_operator(operator_name)
 
-        if operator in ["in_", "notin_", "between"]:
+        if operator in ["in_", "notin_", "not_in", "between"]:  # notin_ is deprecated
             if not isinstance(value, (list, set, tuple)):
                 raise ValueError(
                     f"Iterable object expected when using {operator} operator",
@@ -90,11 +82,24 @@ class BaseQueryBuilder:
         if operator in ("like", "ilike"):
             filter_ = getattr(column, operator)(value, escape="\\")
         else:
-            filter_ = (
-                getattr(column, operator)(value)
-                if operator != "between"
-                else getattr(column, operator)(*value)
-            )
+            try:
+                filter_ = (
+                    getattr(column, operator)(value)
+                    if operator
+                    not in [
+                        "between",
+                        "tuple",
+                        "not_in",
+                        "notin_",
+                    ]  # notin_ is deprecated
+                    else getattr(column, operator)(*value)
+                )
+            except TypeError as e:
+                logging.error(
+                    "You probably called an instance comparator (is, is_not) with wrong value. It should use"
+                    "null type (from sqlalchemy) or None type"
+                )
+                raise e
 
         return filter_
 
@@ -108,45 +113,45 @@ class BaseQueryBuilder:
 
         operand.simple_expression = self._run_search(operand.simple_expression)
 
-    def _run_search(self, args):
+        return operand
+
+    def _run_search(self, filters_path: Dict) -> List[Dict[str, Any]]:
         """
+        :params: filters_path: dict of filter (key: filter_path, value: value searched int db)
         For each argument passed in the filter eg: column1__remote__column2__operator
-        found the models related to it and make in order to reuse them while building base query
-        :return:
+        find the model related to it and make in order to reuse them while building base query
+        :return: dict
         """
         data = []
 
-        for filter_request, value in args.items():
+        for filter_request, value in filters_path.items():
             self.current = copy.deepcopy(filter_request)
             filter_request = filter_request.split("__")
-            operator = self.get_operator(filter_request[-1])
+            operator = get_operator(filter_request[-1])
 
             if operator:
-                filter_request.pop(-1)
-            try:
-                collected_rel_object, lookup_field = self.dive(
-                    self.base_model,
-                    filter_request,
-                )
-                for rel_info in collected_rel_object:
-                    self.updated_base_query(**rel_info)
+                filter_request.pop(-1)  # remote from the filter literal string
 
-                models = [obj.get("model") for obj in collected_rel_object]
+            collected_rel_object, lookup_field = self.dive(
+                self.base_model,
+                filter_request,
+            )
 
-                data.append(
-                    {
-                        self.current: {
-                            "model": models[-1] if models else self.base_model,
-                            "operator_name": operator or "__eq__",
-                            "field": lookup_field,
-                            "value": value,
-                        },
+            for rel_info in collected_rel_object:
+                self.updated_base_query(**rel_info)
+
+            models = [obj.get("model") for obj in collected_rel_object]
+
+            data.append(
+                {
+                    self.current: {
+                        "model": models[-1] if models else self.base_model,
+                        "operator_name": operator or "__eq__",
+                        "field": lookup_field,
+                        "value": value,
                     },
-                )
-            except InvalidRequestError as e:
-                logging.error("An error occurred while trying to find field in model")
-                logging.exception(e)
-                raise e
+                },
+            )
 
         return data
 
@@ -197,9 +202,9 @@ class BaseQueryBuilder:
 
             return operand.sqlalchemy_operator(*expression_list)
 
-        complex_filter_clause = self.complex_filter_clause
-        self.run_search(complex_filter_clause)
+        complex_filter_clause = self.run_search(self.complex_filter_clause)
         final_expression = _build_expression(complex_filter_clause)
+
         return final_expression
 
     def dive(self, model, path, result: list = None):
@@ -222,7 +227,8 @@ class BaseQueryBuilder:
         column = getattr(model, field)
 
         if not column:
-            raise RuntimeError(f"No column named {field}")
+            logging.error(f"Unable to find {column} in the model {model}")
+            raise InvalidRequestError(f"No column named {field}")
 
         if field in list(map(lambda col: col.key, simple_attrs + fk_attrs)):
             next_model = _lookup_model_foreign_key(column)
@@ -238,7 +244,7 @@ class BaseQueryBuilder:
         if next_model is None or next_model == []:
             if (
                 path
-            ):  # If we didn't reach the last element of the path without any model, it's an error
+            ):  # If we do reach the last element of the path without any model, it's an error
                 raise InvalidRequestError(f"Unable to find {field} field in {model}")
             else:
                 return result, field

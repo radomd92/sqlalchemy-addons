@@ -6,7 +6,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy.orm import relationship
 
-from tests.conftest import base_model
+from tests.base_model import base_model
 
 
 class User(base_model):
@@ -17,23 +17,44 @@ class User(base_model):
     last_name = Column(String(50))
 
     addresses = relationship(
-        "Address",
+        "Email",
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    houses = relationship("HouseAssociation", back_populates="user")
 
     def __repr__(self):
         return f"User(id={self.id!r}, first_name={self.first_name!r}, last_name={self.last_name!r}, address={self.addresses})"
 
 
-class Address(base_model):
-    __tablename__ = "address"
+class Email(base_model):
+    __tablename__ = "email_address"
 
-    id = Column(Integer, primary_key=True)
-    email_address = Column(String, nullable=False)
+    card_number = Column(Integer, primary_key=True)
+    address = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("user_account.id"), nullable=False)
 
     user = relationship("User", back_populates="addresses")
 
     def __repr__(self):
-        return f"Address(id={self.id!r}, email_address={self.email_address!r})"
+        return f"Email(id={self.id!r}, address={self.email_address!r})"
+
+
+class House(base_model):
+    __tablename__ = "house"
+    label = Column(String, primary_key=True)
+    address = Column(String, nullable=True)
+
+    users = relationship("HouseAssociation", back_populates="house")
+
+
+class HouseAssociation(base_model):
+    __tablename__ = "house_association"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user_account.id"))
+    house_id = Column(String, ForeignKey("house.label"))
+
+    user = relationship("User", back_populates="houses")
+    house = relationship("House", back_populates="users")
+    extra = Column(String, nullable=True)

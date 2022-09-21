@@ -11,6 +11,7 @@ from sqlalchemy import Table
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.orm.util import AliasedClass
+from sqlalchemy.sql.operators import ColumnOperators
 
 
 def get_model_from_rel(relation_name: str) -> object:
@@ -45,6 +46,7 @@ def get_aliased_model_attrs(aliased_model: AliasedClass, only_fk=False, only_pk=
     :return:
     """
 
+    # noinspection PyProtectedMember
     original_attrs = inspect(aliased_model._aliased_insp.class_).attrs
     aliased_model_attrs = [column for column in original_attrs]
 
@@ -123,8 +125,25 @@ def _lookup_model_foreign_key(
     else:
         try:
             field_name = column.prop.target.name
-        except AttributeError as e:
+        except AttributeError:
             logging.debug(f"Column {column} has no remote field")
             return
 
     return get_model_from_rel(field_name)
+
+
+def get_operator(operator):
+    """
+    Given a filtering_path, return the intended operator
+    :param operator:
+    :return:
+    """
+
+    ope_attr = list(
+        filter(
+            lambda e: hasattr(ColumnOperators, e.format(operator)),
+            ["{}", "{}_", "__{}__"],
+        ),
+    )
+    if ope_attr:
+        return ope_attr[0].format(operator)

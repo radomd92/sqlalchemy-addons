@@ -7,19 +7,21 @@ from jsonformatter import JsonFormatter
 
 RECORD_CUSTOM_FORMAT = OrderedDict(
     [
-        ("Name", "name"),
-        ("Levelno", "levelno"),
-        ("Levelname", "levelname"),
-        ("Pathname", "pathname"),
-        ("Module", "module"),
-        ("Lineno", "lineno"),
-        ("FuncName", "funcName"),
-        ("Message", "message"),
+        ("name", "name"),
+        ("level", "levelname"),
+        ("filepath", "pathname"),
+        ("module", "module"),
+        ("linenumber", "lineno"),
+        ("function", "funcName"),
+        ("message", "message"),
     ],
 )
 
 logger = logging.getLogger("sqlalchemy_django_orm_like")
-formatter = JsonFormatter(RECORD_CUSTOM_FORMAT)
+# noinspection PyTypeChecker
+formatter = JsonFormatter(
+    RECORD_CUSTOM_FORMAT, ensure_ascii=False, mix_extra=True, mix_extra_position="mix"
+)
 
 json_handler = logging.StreamHandler()
 json_handler.setFormatter(formatter)

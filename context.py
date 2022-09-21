@@ -29,6 +29,7 @@ class DBContext(metaclass=DBContextMeta):
         self._engine = None
         self._session: Union[Session, None] = None
         self._settings = settings.dict()
+        self.setup_engine()
 
     def setup_engine(self) -> Union[Engine, None]:
         if not self._settings:

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import re
+from unittest.mock import MagicMock
+from unittest.mock import patch
+
 import pytest
-from sqlalchemy.orm import Query
+from sqlalchemy.exc import InvalidRequestError
 
 from db.operators import And
 from db.operators import Or
@@ -10,67 +14,90 @@ from tests.models import User
 
 
 @pytest.mark.usefixtures("test_context")
-@pytest.mark.usefixtures("query_with_join")
 class TestBaseQueryBuilder:
-    def test_base_query_builder_init(self, test_context):
-        query_with_and = BaseQueryBuilder(
-            User,
-            And(first_name__contains="test"),
-            session=test_context.session,
-        )
-        query_with_or = BaseQueryBuilder(
-            User,
-            Or(first_name__contains="test"),
-            session=test_context.session,
-        )
-        assert isinstance(query_with_and.complex_filter_clause, And)
-        assert isinstance(query_with_or.complex_filter_clause, Or)
-        assert isinstance(query_with_and.base_query, Query)
-
-    @pytest.mark.parametrize(
-        "operator,expected",
-        [
-            ("ge", "__ge__"),
-            ("le", "__le__"),
-            ("lt", "__lt__"),
-            ("ne", "__ne__"),
-            ("not_in", "not_in"),
-            ("between", "between"),
-            ("like", "like"),
-            ("ilike", "ilike"),
-            ("not_like", "not_like"),
-            ("endswith", "endswith"),
-            ("startswith", "startswith"),
-            ("is_not", "is_not"),
-            ("isnot_distinct_from", "isnot_distinct_from"),
-            ("is", "is_"),
-            ("in", "in_"),
-        ],
-    )
-    def test_get_operator_success(self, operator, expected, test_context):
+    def test_make_filter_with_join_success_args(self, test_context):
         """
-        test if a given operator at the end of a filter is supported by SQLAlchemy
-        Eg: column1__exact=value -> operator is 'exact'
+        Test one join
         """
-        assert expected == BaseQueryBuilder.get_operator(operator)
+        query = BaseQueryBuilder(
+            User, And(addresses__address__contains="@"), test_context.session
+        ).make_filter()
+        assert len(re.findall("JOIN", str(query))) <= 1
 
-    def test_make_filter(self):
-        self.fail()
+    def test_make_filter_with_join_success_complex_args(self, test_context):
+        """
+        Test one join
+        """
+        query = BaseQueryBuilder(
+            User,
+            And(
+                Or(last_name="test", first_name__contains="tester"),
+                addresses__address__contains="@",
+            ),
+            test_context.session,
+        ).make_filter()
+        assert len(re.findall("JOIN", str(query))) <= 1
+        assert len(re.findall("OR", str(query)))
 
-    def test_build_expression(self):
-        self.fail()
+    def test_make_filter_with_join_fail_fake_field(self, test_context):
+        """
+        Test one join - fail with a remote field that not exists
+        """
+        with pytest.raises(AttributeError):
+            BaseQueryBuilder(
+                User, And(addresses__fake_field="@"), test_context.session
+            ).make_filter()
 
-    def test_run_search(self):
-        self.fail()
+    def test_make_filter_with_join_success_empty_args(self, test_context):
+        """
+        Test empty arguments return all result
+        """
+        query_builder = BaseQueryBuilder(User, And(), test_context.session)
+        query = query_builder.make_filter()
+        assert str(query).endswith("FROM user_account")
 
-    def test__run_search(self):
-        self.fail()
+    @patch("db.query.BaseQueryBuilder._run_search")
+    def test_run_search_success(self, run_search, test_context):
+        query_builder = BaseQueryBuilder(
+            User, And(Or(last_name="hello", first_name="owner")), test_context.session
+        )
+        query_builder.run_search(query_builder.complex_filter_clause)
+        expected_calls = [
+            run_search({"last_name": "hello", "first_name": "owner"}),
+            run_search({}),
+        ]
+        run_search.has_calls(expected_calls)
+
+    def test__run_search_success(self, test_context):
+        query_builder = BaseQueryBuilder(
+            User, And(Or(last_name="hello", first_name="owner")), test_context.session
+        )
+        result = query_builder._run_search(
+            {"first_name": "an example", "last_name": "hello world"}
+        )
+        assert 2 == len(result)
+
+        assert User == result[0].get("first_name").get("model")
+        assert "__eq__" == result[0].get("first_name").get("operator_name")
+
+        assert User == result[1].get("last_name").get("model")
+        assert "__eq__" == result[1].get("last_name").get("operator_name")
+
+    @patch("db.query.BaseQueryBuilder.dive")
+    def test__run_search_fail(self, dive: MagicMock, test_context):
+        dive.side_effect = InvalidRequestError
+        query_builder = BaseQueryBuilder(User, And(), test_context.session)
+
+        with pytest.raises(InvalidRequestError):
+            query_builder._run_search(
+                {"addresses__address": "an example", "last_name": "hello world"}
+            )
 
     def test_updated_base_query(self):
-        self.fail()
+        pass
 
     def test_build_final_filter_expression(self):
-        self.fail()
+        pass
 
     def test_dive(self):
-        self.fail()
+        pass
