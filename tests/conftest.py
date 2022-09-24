@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from db.settings import DBSettings
-from db.settings import DriverEnum
+from sqlalchemy_wrapper.db.settings import DBSettings
+from sqlalchemy_wrapper.db.settings import DriverEnum
 from tests.base_model import test_db_context
 from tests.models import User
 

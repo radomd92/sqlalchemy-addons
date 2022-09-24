@@ -4,9 +4,9 @@ import pytest
 from sqlalchemy.orm import Query
 from sqlalchemy.sql.elements import BinaryExpression
 
-from db.query import BaseQueryBuilder
+from sqlalchemy_wrapper.db.query import BaseQueryBuilder
 from tests.models import User
-from utils import get_operator
+from sqlalchemy_wrapper.utils import get_operator
 
 
 # noinspection PyTypeChecker

@@ -14,14 +14,14 @@ from sqlalchemy.orm import Query
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.orm import Session
 
-from db.operators import And
-from db.operators import Or
-from logger import logger as logging
-from utils import _lookup_model_foreign_key
-from utils import _lookup_model_manytomany_rel
-from utils import get_model_attrs
-from utils import get_model_from_rel
-from utils import get_operator
+from sqlalchemy_wrapper.db.operators import And
+from sqlalchemy_wrapper.db.operators import Or
+from sqlalchemy_wrapper.logger import logger as logging
+from sqlalchemy_wrapper.utils import _lookup_model_foreign_key
+from sqlalchemy_wrapper.utils import _lookup_model_manytomany_rel
+from sqlalchemy_wrapper.utils import get_model_attrs
+from sqlalchemy_wrapper.utils import get_model_from_rel
+from sqlalchemy_wrapper.utils import get_operator
 
 
 class BaseQueryBuilder:

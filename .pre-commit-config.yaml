@@ -5,11 +5,6 @@ repos:
     -   id: reorder-python-imports
         exclude: ^(pre_commit/resources/|testing/resources/python3_hooks_repo/)
         args: [--py37-plus, --add-import, 'from __future__ import annotations']
--   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
-    rev: v1.3.0
-    hooks:
-    -   id: python-safety-dependencies-check
-        files: requirements
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
     rev: v1.0.6
     hooks:

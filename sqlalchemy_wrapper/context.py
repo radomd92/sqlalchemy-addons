@@ -9,9 +9,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from db.settings import DBSettings
-from db.settings import DriverEnum
-from logger import logger as logging
+from sqlalchemy_wrapper.db.settings import DBSettings
+from sqlalchemy_wrapper.db.settings import DriverEnum
+from sqlalchemy_wrapper.logger import logger as logging
 
 
 class DBContextMeta(type):

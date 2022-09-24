@@ -7,9 +7,9 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy.exc import InvalidRequestError
 
-from db.operators import And
-from db.operators import Or
-from db.query import BaseQueryBuilder
+from sqlalchemy_wrapper.db.operators import And
+from sqlalchemy_wrapper.db.operators import Or
+from sqlalchemy_wrapper.db.query import BaseQueryBuilder
 from tests.models import User
 
 
@@ -56,7 +56,7 @@ class TestBaseQueryBuilder:
         query = query_builder.make_filter()
         assert str(query).endswith("FROM user_account")
 
-    @patch("db.query.BaseQueryBuilder._run_search")
+    @patch("sqlalchemy_wrapper.db.query.BaseQueryBuilder._run_search")
     def test_run_search_success(self, run_search, test_context):
         query_builder = BaseQueryBuilder(
             User, And(Or(last_name="hello", first_name="owner")), test_context.session
@@ -83,7 +83,7 @@ class TestBaseQueryBuilder:
         assert User == result[1].get("last_name").get("model")
         assert "__eq__" == result[1].get("last_name").get("operator_name")
 
-    @patch("db.query.BaseQueryBuilder.dive")
+    @patch("sqlalchemy_wrapper.db.query.BaseQueryBuilder.dive")
     def test__run_search_fail(self, dive: MagicMock, test_context):
         dive.side_effect = InvalidRequestError
         query_builder = BaseQueryBuilder(User, And(), test_context.session)

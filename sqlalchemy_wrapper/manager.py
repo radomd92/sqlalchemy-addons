@@ -7,11 +7,11 @@ from typing import Union
 
 from sqlalchemy.inspection import inspect
 
-from context import DBContext
-from db.operators import And
-from db.operators import Or
-from db.query import BaseQueryBuilder
-from logger import logger as logging
+from sqlalchemy_wrapper.context import DBContext
+from sqlalchemy_wrapper.db.operators import And
+from sqlalchemy_wrapper.db.operators import Or
+from sqlalchemy_wrapper.db.query import BaseQueryBuilder
+from sqlalchemy_wrapper.logger import logger as logging
 
 
 class Manager:

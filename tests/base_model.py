@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from sqlalchemy.orm import declarative_base
 
-from context import DBContext
-from db.settings import DBSettings
-from db.settings import DriverEnum
-from manager import Manager
+from sqlalchemy_wrapper.context import DBContext
+from sqlalchemy_wrapper.db.settings import DBSettings
+from sqlalchemy_wrapper.db.settings import DriverEnum
+from sqlalchemy_wrapper.manager import Manager
 
 test_settings = DBSettings(
     driver=DriverEnum.SQLITE,

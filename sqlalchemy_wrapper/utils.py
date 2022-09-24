@@ -22,7 +22,7 @@ def get_model_from_rel(relation_name: str) -> object:
     :param relation_name:
     :return: List of model
     """
-    from manager import Manager
+    from sqlalchemy_wrapper.manager import Manager
 
     all_models = Manager.__subclasses__()[0].__subclasses__()
 
