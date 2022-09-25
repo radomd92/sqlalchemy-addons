@@ -62,6 +62,7 @@ class DBContext(metaclass=DBContextMeta):
                 "An error occurred while setting up connection to the database. Take a look on traceback",
             )
             logging.error(str(e))
+            raise e
 
     @property
     def settings(self) -> Dict:
