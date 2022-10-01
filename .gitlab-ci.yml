@@ -25,6 +25,9 @@ Deploy:
   stage: deploy
   script:
     - poetry build
-    - poetry config repositories.gitlab "https://code-repo.cloudmali.ml/api/v4/projects/$SA_PASSWORD/packages/pypi"
+    - poetry config repositories.gitlab "https://code-repo.cloudmali.ml/api/v4/projects/$PROJECT_ID/packages/pypi"
     - poetry config http-basic.gitlab admin "$REGISTRY_TOKEN"
     - poetry publish --repository gitlab
+  only:
+    - develop
+    - master

@@ -14,6 +14,7 @@ from sqlalchemy.orm.util import AliasedClass
 from sqlalchemy.sql.operators import ColumnOperators
 
 
+
 def get_model_from_rel(relation_name: str) -> object:
     """
     Given a name of column that contains a relationship field (ForeignKeyRel),
@@ -22,8 +23,8 @@ def get_model_from_rel(relation_name: str) -> object:
     :param relation_name:
     :return: List of model
     """
-    from sqlalchemy_wrapper.manager import Manager
 
+    from sqlalchemy_wrapper.manager import Manager
     all_models = Manager.__subclasses__()[0].__subclasses__()
 
     table_name = relation_name.split(".")[0]

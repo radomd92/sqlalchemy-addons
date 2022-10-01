@@ -4,7 +4,7 @@ import pytest
 
 from sqlalchemy_wrapper.db.settings import DBSettings
 from sqlalchemy_wrapper.db.settings import DriverEnum
-from tests.base_model import test_db_context
+from sqlalchemy_wrapper.manager import Manager
 from tests.models import User
 
 test_settings = DBSettings(
@@ -18,4 +18,4 @@ User.__table__.create(User.db_context._engine)
 
 @pytest.fixture(scope="class")
 def test_context():
-    yield test_db_context
+    yield Manager.db_context

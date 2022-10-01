@@ -6,11 +6,13 @@ from typing import Tuple
 from typing import Union
 
 from sqlalchemy.inspection import inspect
+from sqlalchemy.orm import declarative_base
 
 from sqlalchemy_wrapper.context import DBContext
 from sqlalchemy_wrapper.db.operators import And
 from sqlalchemy_wrapper.db.operators import Or
 from sqlalchemy_wrapper.db.query import BaseQueryBuilder
+from sqlalchemy_wrapper.db.settings import DBSettings
 from sqlalchemy_wrapper.logger import logger as logging
 
 
@@ -32,8 +34,10 @@ class Manager:
         """
         return [col.key for col in inspect(cls).mapper.column_attrs]
 
-    def describe(self, include_rel=False, format_="json"):
-        raise NotImplementedError("Not implemented yet")
+    @classmethod
+    def as_base_model(cls, settings: DBSettings):
+        cls.set_db_context(DBContext(settings))
+        return declarative_base(cls=cls)
 
     def as_json(self, include_rel: bool):
         """
@@ -124,7 +128,7 @@ class Manager:
     @classmethod
     def filter(cls, bool_clause=And, **conditions):
         """
-        Dummy wrapper for filtering. For now use the default session of SQLAlchemy
+        Dummy wrapper for filtering. For now use the default session of SQLAlchemy.
         :param bool_clause: operator to use by default when multiple kwargs are passed
         :param conditions:
         :return:
@@ -170,7 +174,7 @@ class Manager:
 
         for field, value in field_to_update.items():
             if not hasattr(self, field):
-                logging.warning("The current object has not this fields")
+                logging.warning(f"The current object has not field named {field}. Skipping...")
                 continue
 
             logging.debug(f"Setting attribute {field}:{value}")
