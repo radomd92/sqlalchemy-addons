@@ -9,6 +9,9 @@ packages = [{include = "sqlalchemy_wrapper"}, {include = "tests"}]
 
 [tool.semantic_release]
 version_toml = "pyproject.toml:tool.poetry.version"
+version_source = "only_tag"
+branch = "main"
+
 
 [tool.poetry.dependencies]
 python = "^3.9"
