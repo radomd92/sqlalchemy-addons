@@ -5,7 +5,10 @@ description = "A wrapper on top of sqlalchemy that allow to make django orm styl
 authors = ["Soumaila <soumaila.kouriba@creativeteam.ml>"]
 license = "GNU GPLv3"
 readme = "README.md"
-packages = [{include = "sqlalchemy_wrapper"}, {include = "tests"} ]
+packages = [{include = "sqlalchemy_wrapper"}, {include = "tests"}]
+
+[tool.semantic_release]
+version_toml = "pyproject.toml:tool.poetry.version"
 
 [tool.poetry.dependencies]
 python = "^3.9"
