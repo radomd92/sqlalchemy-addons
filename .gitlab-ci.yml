@@ -1,20 +1,21 @@
 image: python:3.9
 
 stages:
-  - test
   - lint
+  - test
   - types
   - release
 
 before_script:
-  - pip install -r requirements-cicd.txt
+  - pip install poetry
   - poetry config virtualenvs.create false
   - poetry install
 
 Python Code Lint:
   stage: lint
-  before_script: []
+  before_script:
   script:
+    - pip install -r requirements-cicd.txt
     - black sqlalchemy_wrapper tests
     - mypy sqlalchemy_wrapper --ignore-missing-imports
 

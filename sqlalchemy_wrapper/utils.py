@@ -126,7 +126,7 @@ def _lookup_model_foreign_key(column: Column) -> Table | Type[DeclarativeMeta] |
             field_name = column.prop.target.name
         except AttributeError:
             logging.debug(f"Column {column} has no remote field")
-            raise AttributeError(f"Column {column} has no remote field")
+            return None
 
     return get_model_from_rel(field_name)
 
