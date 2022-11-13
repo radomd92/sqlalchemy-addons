@@ -174,7 +174,9 @@ class Manager:
 
         for field, value in field_to_update.items():
             if not hasattr(self, field):
-                logging.warning(f"The current object has not field named {field}. Skipping...")
+                logging.warning(
+                    f"The current object has not field named {field}. Skipping..."
+                )
                 continue
 
             logging.debug(f"Setting attribute {field}:{value}")

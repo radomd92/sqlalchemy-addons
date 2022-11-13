@@ -25,7 +25,7 @@ class DBContextMeta(type):
 
 
 class DBContext(metaclass=DBContextMeta):
-    def __init__(self, settings: DBSettings = None):
+    def __init__(self, settings: DBSettings):
         self._engine = None
         self._session: Union[Session, None] = None
         self._settings = settings.dict()

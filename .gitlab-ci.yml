@@ -1,33 +1,39 @@
 image: python:3.9
 
 stages:
-  - test
   - lint
+  - test
   - types
-  - deploy
+  - release
 
 before_script:
-  - pip install poetry black
+  - pip install poetry
   - poetry config virtualenvs.create false
   - poetry install
+
+Python Code Lint:
+  stage: lint
+  before_script:
+  script:
+    - pip install -r requirements-cicd.txt
+    - black sqlalchemy_wrapper tests
+    - mypy sqlalchemy_wrapper --ignore-missing-imports
 
 Unit Tests:
   stage: test
   script:
     - poetry run pytest
 
-Python Code Lint:
-  stage: lint
-  script:
-    - poetry run black .
-
-Deploy:
-  stage: deploy
+Release:
+  stage: release
   script:
     - poetry build
     - poetry config repositories.gitlab "https://code-repo.cloudmali.ml/api/v4/projects/$PROJECT_ID/packages/pypi"
     - poetry config http-basic.gitlab admin "$REGISTRY_TOKEN"
     - poetry publish --repository gitlab
   only:
-    - develop
     - master
+  artifacts:
+    name: sqlalchemy_wrapper_files
+    paths:
+        - dist/*
