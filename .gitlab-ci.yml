@@ -4,7 +4,7 @@ stages:
   - test
   - lint
   - types
-  - deploy
+  - release
 
 before_script:
   - pip install poetry black
@@ -21,13 +21,12 @@ Python Code Lint:
   script:
     - poetry run black .
 
-Deploy:
-  stage: deploy
+Release:
+  stage: release
   script:
     - poetry build
     - poetry config repositories.gitlab "https://code-repo.cloudmali.ml/api/v4/projects/$PROJECT_ID/packages/pypi"
     - poetry config http-basic.gitlab admin "$REGISTRY_TOKEN"
     - poetry publish --repository gitlab
-  only:
-    - develop
-    - master
+  rules:
+    - if: $CI_COMMIT_TAG
