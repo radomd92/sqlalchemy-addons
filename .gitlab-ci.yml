@@ -7,20 +7,21 @@ stages:
   - release
 
 before_script:
-  - pip install poetry black
+  - pip install -r requirements-cicd.txt
   - poetry config virtualenvs.create false
   - poetry install
-
-Unit Tests:
-  stage: test
-  script:
-    - poetry run pytest
 
 Python Code Lint:
   stage: lint
   before_script: []
   script:
     - black sqlalchemy_wrapper tests
+    - mypy sqlalchemy_wrapper --ignore-missing-imports
+
+Unit Tests:
+  stage: test
+  script:
+    - poetry run pytest
 
 Release:
   stage: release
@@ -31,3 +32,7 @@ Release:
     - poetry publish --repository gitlab
   only:
     - master
+  artifacts:
+    name: sqlalchemy_wrapper_files
+    paths:
+        - dist/*
