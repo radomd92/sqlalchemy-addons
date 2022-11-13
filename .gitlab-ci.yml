@@ -18,8 +18,9 @@ Unit Tests:
 
 Python Code Lint:
   stage: lint
+  before_script: []
   script:
-    - poetry run black .
+    - black sqlalchemy_wrapper tests
 
 Release:
   stage: release
@@ -28,5 +29,5 @@ Release:
     - poetry config repositories.gitlab "https://code-repo.cloudmali.ml/api/v4/projects/$PROJECT_ID/packages/pypi"
     - poetry config http-basic.gitlab admin "$REGISTRY_TOKEN"
     - poetry publish --repository gitlab
-  rules:
-    - if: $CI_COMMIT_TAG
+  only:
+    - master
