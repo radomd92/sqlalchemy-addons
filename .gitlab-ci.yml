@@ -32,7 +32,7 @@ Release:
     - poetry config http-basic.gitlab admin "$REGISTRY_TOKEN"
     - poetry publish --repository gitlab
   only:
-    - master
+    - main
   artifacts:
     name: sqlalchemy_wrapper_files
     paths:
