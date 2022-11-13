@@ -32,11 +32,24 @@ class BaseFilter:
         return self._set_operation(Or, other)
 
     def __eq__(self, other):
-        return isinstance(self, BooleanOperator) and isinstance(other, BooleanOperator) \
-               and self.simple_expression == other.simple_operandes \
-               and all([any([e == e2 for e2 in self.wrapped_expression]) for e in other.bool_operandes]) \
-               and all([any([e == e2 for e2 in other.bool_operandes]) for e in self.wrapped_expression]) \
-               and len(self.wrapped_expression) == len(other.bool_operandes)
+        return (
+            isinstance(self, BooleanOperator)
+            and isinstance(other, BooleanOperator)
+            and self.simple_expression == other.simple_operandes
+            and all(
+                [
+                    any([e == e2 for e2 in self.wrapped_expression])
+                    for e in other.bool_operandes
+                ],
+            )
+            and all(
+                [
+                    any([e == e2 for e2 in other.bool_operandes])
+                    for e in self.wrapped_expression
+                ],
+            )
+            and len(self.wrapped_expression) == len(other.bool_operandes)
+        )
 
 
 class BooleanOperator(BaseFilter):
@@ -49,7 +62,10 @@ class BooleanOperator(BaseFilter):
         super().__init__(*operators_operands, **simple_expression)
 
     def __eq__(self, other):
-        return super().__eq__(other) and self.sqlalchemy_operator == other.sqlalchemy_operator
+        return (
+            super().__eq__(other)
+            and self.sqlalchemy_operator == other.sqlalchemy_operator
+        )
 
 
 class And(BooleanOperator):

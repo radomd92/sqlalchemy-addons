@@ -11,6 +11,8 @@ from sqlalchemy import Table
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.orm.util import AliasedClass
+from sqlalchemy.sql.operators import ColumnOperators
+
 
 
 def get_model_from_rel(relation_name: str) -> object:
@@ -21,15 +23,15 @@ def get_model_from_rel(relation_name: str) -> object:
     :param relation_name:
     :return: List of model
     """
-    from manager import Manager
 
+    from sqlalchemy_wrapper.manager import Manager
     all_models = Manager.__subclasses__()[0].__subclasses__()
 
-    table_name = relation_name.split('.')[0]
+    table_name = relation_name.split(".")[0]
     found = [
         model
-         for model in all_models
-         if getattr(model, '__tablename__', None) == table_name
+        for model in all_models
+        if getattr(model, "__tablename__", None) == table_name
     ]
 
     if found:
@@ -45,6 +47,7 @@ def get_aliased_model_attrs(aliased_model: AliasedClass, only_fk=False, only_pk=
     :return:
     """
 
+    # noinspection PyProtectedMember
     original_attrs = inspect(aliased_model._aliased_insp.class_).attrs
     aliased_model_attrs = [column for column in original_attrs]
 
@@ -65,25 +68,36 @@ def get_model_attrs(model) -> Dict:
     """
 
     inspection = inspect(model)
-    current_all_fields = set(getattr(inspection, 'attrs', None) or get_aliased_model_attrs(model))
-    many_to_many_rels = set(filter(lambda rel: getattr(rel, 'secondary', None) is not None, current_all_fields))
+    current_all_fields = set(
+        getattr(inspection, "attrs", None) or get_aliased_model_attrs(model),
+    )
+    many_to_many_rels = set(
+        filter(
+            lambda rel: getattr(rel, "secondary", None) is not None,
+            current_all_fields,
+        ),
+    )
 
     fk_attrs = set(
         filter(
-        lambda rel: getattr(rel, 'secondary', None) is None and isinstance(rel, RelationshipProperty)
-                    or getattr(rel, 'foreign_keys', None),
-        current_all_fields,
+            lambda rel: getattr(rel, "secondary", None) is None
+            and isinstance(rel, RelationshipProperty)
+            or getattr(rel, "foreign_keys", None),
+            current_all_fields,
         ),
     )
 
     # update current_available_field to remove many_to_many_rel field from it
     simple_attrs = current_all_fields.difference(fk_attrs).difference(many_to_many_rels)
 
-    return OrderedDict({
-        'simple_attrs': list(simple_attrs),
-        'fk_attrs': list(fk_attrs),
-        'many_to_many_rel': list(many_to_many_rels),
-    })
+    return OrderedDict(
+        {
+            "simple_attrs": list(simple_attrs),
+            "fk_attrs": list(fk_attrs),
+            "many_to_many_rel": list(many_to_many_rels),
+        },
+    )
+
 
 def _lookup_model_manytomany_rel(ref_key: Column) -> Dict[str, Table]:
     """
@@ -92,25 +106,45 @@ def _lookup_model_manytomany_rel(ref_key: Column) -> Dict[str, Table]:
     :return: Dict
     """
     return {
-        'target': get_model_from_rel(ref_key.target.name),
-        'secondary': ref_key.secondary,  # Association table are not derived from Base. So use them as they are
+        "target": get_model_from_rel(ref_key.target.name),
+        "secondary": ref_key.secondary,  # Association table are not derived from Base. So use them as they are
     }
 
-def _lookup_model_foreign_key(column: Column) -> Tuple[Table, InstrumentedAttribute] or None:
+
+def _lookup_model_foreign_key(
+    column: Column,
+) -> Tuple[Table, InstrumentedAttribute] or None:
     """
     Retrieve remote model of a foreign key column
     :param column:
     :return: Models
     """
 
-    if getattr(column, 'foreign_keys', None):
+    if getattr(column, "foreign_keys", None):
         field = list(column.foreign_keys).pop()
         field_name = field.column.table.name
     else:
         try:
             field_name = column.prop.target.name
-        except AttributeError as e:
-            logging.debug(f'Column {column} has no remote field')
+        except AttributeError:
+            logging.debug(f"Column {column} has no remote field")
             return
 
     return get_model_from_rel(field_name)
+
+
+def get_operator(operator):
+    """
+    Given a filtering_path, return the intended operator
+    :param operator:
+    :return:
+    """
+
+    ope_attr = list(
+        filter(
+            lambda e: hasattr(ColumnOperators, e.format(operator)),
+            ["{}", "{}_", "__{}__"],
+        ),
+    )
+    if ope_attr:
+        return ope_attr[0].format(operator)

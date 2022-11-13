@@ -4,8 +4,8 @@ from sqlalchemy.exc import DatabaseError
 
 
 class ObjectCreationError(DatabaseError):
-	pass
+    pass
 
 
 class QueryFilterError(DatabaseError):
-	pass
+    pass

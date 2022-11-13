@@ -1,0 +1,33 @@
+image: python:3.9
+
+stages:
+  - test
+  - lint
+  - types
+  - deploy
+
+before_script:
+  - pip install poetry black
+  - poetry config virtualenvs.create false
+  - poetry install
+
+Unit Tests:
+  stage: test
+  script:
+    - poetry run pytest
+
+Python Code Lint:
+  stage: lint
+  script:
+    - poetry run black .
+
+Deploy:
+  stage: deploy
+  script:
+    - poetry build
+    - poetry config repositories.gitlab "https://code-repo.cloudmali.ml/api/v4/projects/$PROJECT_ID/packages/pypi"
+    - poetry config http-basic.gitlab admin "$REGISTRY_TOKEN"
+    - poetry publish --repository gitlab
+  only:
+    - develop
+    - master

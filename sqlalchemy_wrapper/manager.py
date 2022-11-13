@@ -6,12 +6,14 @@ from typing import Tuple
 from typing import Union
 
 from sqlalchemy.inspection import inspect
+from sqlalchemy.orm import declarative_base
 
-from context import DBContext
-from db.operators import And
-from db.operators import Or
-from db.query import BaseQueryBuilder
-from logger import logger as logging
+from sqlalchemy_wrapper.context import DBContext
+from sqlalchemy_wrapper.db.operators import And
+from sqlalchemy_wrapper.db.operators import Or
+from sqlalchemy_wrapper.db.query import BaseQueryBuilder
+from sqlalchemy_wrapper.db.settings import DBSettings
+from sqlalchemy_wrapper.logger import logger as logging
 
 
 class Manager:
@@ -32,8 +34,10 @@ class Manager:
         """
         return [col.key for col in inspect(cls).mapper.column_attrs]
 
-    def describe(self, include_rel=False, format_='json'):
-        raise NotImplementedError('Not implemented yet')
+    @classmethod
+    def as_base_model(cls, settings: DBSettings):
+        cls.set_db_context(DBContext(settings))
+        return declarative_base(cls=cls)
 
     def as_json(self, include_rel: bool):
         """
@@ -41,7 +45,10 @@ class Manager:
         :return: dict
         """
         result = {}
-        [result.update({col: getattr(self, col)}) for col in self.get_class().get_simple_column()]
+        [
+            result.update({col: getattr(self, col)})
+            for col in self.get_class().get_simple_column()
+        ]
         if include_rel:
             # TODO: Implement the method in the next release
             pass
@@ -55,13 +62,14 @@ class Manager:
         :return: The instance of the cls
         """
         logging.info(
-            f'Adding object {cls} to db', extra={
-                'data': values,
+            f"Adding object {cls} to db",
+            extra={
+                "data": values,
             },
         )
         obj = cls(**values)
         cls.db_context.session.add(obj)  # ID is not commit without dbService
-        logging.info(f'{cls} is being add to the DB', extra={'objects': [str(obj)]})
+        logging.info(f"{cls} is being add to the DB", extra={"objects": [str(obj)]})
         return obj
 
     @classmethod
@@ -75,7 +83,7 @@ class Manager:
             obj_collections = list(map(lambda data: cls(**data), data_collections))
             cls.db_context.session.bulk_save_objects(obj_collections)
         else:
-            logging.info('No data to add')
+            logging.info("No data to add")
 
     @classmethod
     def all(cls):
@@ -93,9 +101,11 @@ class Manager:
         data = cls.filter(**conditions)
         if data:
             if len(data) > 1:
-                raise ValueError("The conditions provided has returned multiple result. It's not allowed")
+                raise ValueError(
+                    "The conditions provided has returned multiple result. It's not allowed",
+                )
 
-            logging.debug(f'Found : {data[0]}')
+            logging.debug(f"Found : {data[0]}")
             return data[0]
 
     @classmethod
@@ -118,7 +128,7 @@ class Manager:
     @classmethod
     def filter(cls, bool_clause=And, **conditions):
         """
-        Dummy wrapper for filtering. For now use the default session of SQLAlchemy
+        Dummy wrapper for filtering. For now use the default session of SQLAlchemy.
         :param bool_clause: operator to use by default when multiple kwargs are passed
         :param conditions:
         :return:
@@ -126,8 +136,9 @@ class Manager:
 
         data = cls._filter(bool_clause, **conditions).all()
         logging.debug(
-            f'{len(data)} {str(cls)} retrieved from database.', extra={
-                'data_retrieved': list(map(str, data)),
+            f"{len(data)} {str(cls)} retrieved from database.",
+            extra={
+                "data_retrieved": list(map(str, data)),
             },
         )
         return data
@@ -149,20 +160,24 @@ class Manager:
     def update(self, filter_none=True, **field_to_update):
         """
         Update current instance.
-        :param filter_none: Remove None value from field_to_update if true
+        :param filter_none: Remove None from field_to_update if true
         :param field_to_update: all fields that you want update in target model
         :return:
         """
         if filter_none:
-            logging.debug(f'Filtering None values in filter to get {self.__str__()} object')
-            field_to_update = {k: v for k, v in field_to_update.items() if v is not None}
+            logging.debug(
+                f"Filtering None values in filter to get {self.__str__()} object",
+            )
+            field_to_update = {
+                k: v for k, v in field_to_update.items() if v is not None
+            }
 
         for field, value in field_to_update.items():
             if not hasattr(self, field):
-                logging.warning('The current object has not this fields')
+                logging.warning(f"The current object has not field named {field}. Skipping...")
                 continue
 
-            logging.debug(f'Setting attribute {field}:{value}')
+            logging.debug(f"Setting attribute {field}:{value}")
             setattr(self, field, value)
 
         self.db_context.session.flush()
