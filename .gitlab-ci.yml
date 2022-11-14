@@ -13,7 +13,7 @@ before_script:
 
 Python Code Lint:
   stage: lint
-  before_script:
+  before_script: []
   script:
     - pip install -r requirements-cicd.txt
     - black sqlalchemy_wrapper tests
@@ -31,7 +31,7 @@ Release:
     - export REPOSITORY_URL="https://code-repo.cloudmali.ml/api/v4/projects/$PROJECT_ID/packages/pypi"
     - export REPOSITORY_USERNAME=admin
     - export REPOSITORY_PASSWORD=$REGISTRY_TOKEN
-    - semantic-release --print-version
+    - semantic-release print-version
     - semantic-release publish
   only:
     - main
