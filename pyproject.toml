@@ -10,7 +10,7 @@ packages = [{include = "sqlalchemy_wrapper"}, {include = "tests"}]
 [tool.semantic_release]
 version_toml = "pyproject.toml:tool.poetry.version"
 version_source = "only_tag"
-build_command = "pip install poetry && poetry build"
+build_command = "poetry build"
 branch = "main"
 
 
