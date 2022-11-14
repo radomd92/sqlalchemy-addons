@@ -11,18 +11,18 @@ before_script:
   - poetry config virtualenvs.create false
   - poetry install
 
-# Python Code Lint:
-#   stage: lint
-#   before_script: []
-#   script:
-#     - pip install -r requirements-cicd.txt
-#     - black sqlalchemy_wrapper tests
-#     - mypy sqlalchemy_wrapper --ignore-missing-imports
-#
-# Unit Tests:
-#   stage: test
-#   script:
-#     - poetry run pytest
+Python Code Lint:
+ stage: lint
+ before_script: []
+ script:
+   - pip install -r requirements-cicd.txt
+   - black sqlalchemy_wrapper tests
+   - mypy sqlalchemy_wrapper --ignore-missing-imports
+
+Unit Tests:
+ stage: test
+ script:
+   - poetry run pytest
 
 Release:
   stage: release
@@ -32,8 +32,7 @@ Release:
     - export REPOSITORY_USERNAME=admin
     - export REPOSITORY_PASSWORD=$REGISTRY_TOKEN
     - export GL_TOKEN=$REGISTRY_TOKEN
-    - env
-    - git config user.email "admin@cloudmali.ml"
+    - git config user.email "semantic-release-bot@cloudmali.ml"
     - git config user.name "semantic-release"
     - GITLAB_CI=true semantic-release publish --verbosity=DEBUG -D hvcs="gitlab"
   only:
