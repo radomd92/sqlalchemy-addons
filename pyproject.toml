@@ -2,7 +2,7 @@
 name = "sqlalchemy-django-wrapper"
 version = "v0.1.0"
 description = "A wrapper on top of sqlalchemy that allow to make django orm style query"
-authors = ["Soumaila <soumaila.kouriba@creativeteam.ml>"]
+authors = ["Soumaila <admin@cloudmali.ml>"]
 license = "GNU GPLv3"
 readme = "README.md"
 packages = [{include = "sqlalchemy_wrapper"}, {include = "tests"}]

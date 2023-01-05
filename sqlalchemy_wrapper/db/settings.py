@@ -22,7 +22,7 @@ class DBSettings(BaseSettings):
     password: str = ""
     auto_commit: bool = True
     is_test: bool = False
-    sqlite_db_path: str = "./db.sqlite3"
+    sqlite_db_path: str = "/tests/db.sqlite3"
     error_handler: Optional[PyObject]
 
     class Config:

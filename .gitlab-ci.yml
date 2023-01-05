@@ -12,19 +12,19 @@ before_script:
   - poetry install
 
 Python Code Lint:
- stage: lint
- before_script: []
- script:
-   - pip install -r requirements-cicd.txt
-   - black sqlalchemy_wrapper tests
-   - mypy sqlalchemy_wrapper --ignore-missing-imports
+  stage: lint
+  before_script: []
+  script:
+    - pip install -r requirements-cicd.txt
+    - black sqlalchemy_wrapper tests
+    - mypy sqlalchemy_wrapper --ignore-missing-imports
 
 Unit Tests:
- stage: test
- script:
-   - poetry run pytest
+  stage: test
+  script:
+    - poetry run pytest
 
-Release:
+Release on private gitlab:
   stage: release
   script:
     - pip install python-semantic-release
