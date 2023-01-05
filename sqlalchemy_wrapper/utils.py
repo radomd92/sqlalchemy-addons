@@ -131,6 +131,16 @@ def _lookup_model_foreign_key(column: Column) -> Table | Type[DeclarativeMeta] |
     return get_model_from_rel(field_name)
 
 
+def get_primary_key(model_instance):
+    """
+    Will not work with composite primary key
+    """
+    try:
+        return [column.name for column in model_instance.__table__.primary_key][0]
+    except (AttributeError, IndexError):
+        logging.error(f"{model_instance} has no primary key")
+
+
 def get_operator(operator):
     """
     Given a filtering_path, return the intended operator

@@ -9,12 +9,31 @@ from sqlalchemy.orm import relationship
 from tests.base_model import base_model
 
 
+class Item(base_model):
+    __tablename__ = "item"
+    item_id = Column(Integer, primary_key=True)
+    content = Column(String)
+
+    file = relationship("File")
+
+
+class File(base_model):
+    __tablename__ = "file"
+
+    id = Column(Integer, primary_key=True)
+    path = Column(String)
+    item = Column(ForeignKey(Item.item_id))
+
+    user = relationship("User")
+
+
 class User(base_model):
     __tablename__ = "user_account"
 
     id = Column(Integer, primary_key=True)
     first_name = Column(String(50))
     last_name = Column(String(50))
+    file = Column(ForeignKey(File.id))
 
     addresses = relationship(
         "Email",

@@ -237,7 +237,7 @@ class BaseQueryBuilder:
             for relation_object in many_to_many_rels:
                 if field == relation_object.key:
                     next_model, through_table = _lookup_model_manytomany_rel(
-                        relation_object,
+                        relation_object
                     ).values()
                     is_many_to_many = True
                     break

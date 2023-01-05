@@ -14,6 +14,8 @@ from sqlalchemy_wrapper.db.operators import Or
 from sqlalchemy_wrapper.db.query import BaseQueryBuilder
 from sqlalchemy_wrapper.db.settings import DBSettings
 from sqlalchemy_wrapper.logger import logger as logging
+from sqlalchemy_wrapper.utils import _lookup_model_foreign_key
+from sqlalchemy_wrapper.utils import get_primary_key
 
 
 class Manager:
@@ -21,6 +23,10 @@ class Manager:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    @property
+    def pk(self):
+        return getattr(self, get_primary_key(self))
 
     @classmethod
     def set_db_context(cls, context: DBContext):
@@ -67,10 +73,48 @@ class Manager:
                 "data": values,
             },
         )
+        values = cls.get_foreign_model_creation_data(values)
         obj = cls(**values)
-        cls.db_context.session.add(obj)  # ID is not commit without dbService
         logging.info(f"{cls} is being add to the DB", extra={"objects": [str(obj)]})
+        cls.db_context.session.add(obj)
+
+        if cls.db_context.settings.get("auto_commit"):
+            cls.db_context.session.commit()
+
+        logging.info(f"{obj} added with success")
+
         return obj
+
+    @classmethod
+    def get_foreign_model_creation_data(cls, data: dict):
+        """
+        Detect in a creation payload, which field are for the creation for a related model
+        Ex:
+            class Child(Base):
+                first_name = ...
+
+            class Parent(Base):
+                name = ...
+                birth = ...
+                child = Column(INTEGER, ForeignKey(Child.id), ....)
+
+            Parent.create(name=..., birth=..., child={'first_name': 'Jon Doe'})
+
+        Should save object as it is if the field is a JSONField
+        """
+
+        for field_name, field_value in data.items():
+            remote_field_model = _lookup_model_foreign_key(
+                getattr(cls, field_name, None)
+            )
+            if remote_field_model:
+                logging.info(
+                    f"Remote field detected: {remote_field_model.__name__}. Creating a new {remote_field_model.__name__} object"
+                )
+                objekt = remote_field_model.create(**field_value)
+                data.update({field_name: objekt.pk})
+
+        return data
 
     @classmethod
     def create_multiple(cls, data_collections: Union[List[Dict], Tuple[Dict]]) -> None:
