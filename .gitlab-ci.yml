@@ -1,0 +1,43 @@
+image: python:3.9
+
+stages:
+  - lint
+  - test
+  - types
+  - release
+
+before_script:
+  - pip install poetry
+  - poetry config virtualenvs.create false
+  - poetry install
+
+Python Code Lint:
+  stage: lint
+  before_script: []
+  script:
+    - pip install -r requirements-cicd.txt
+    - black sqlalchemy_wrapper tests
+    - mypy sqlalchemy_wrapper --ignore-missing-imports
+
+Unit Tests:
+  stage: test
+  script:
+    - poetry run pytest
+
+Release on private gitlab:
+  stage: release
+  script:
+    - pip install python-semantic-release
+    - export REPOSITORY_URL="https://code-repo.cloudmali.ml/api/v4/projects/$PROJECT_ID/packages/pypi"
+    - export REPOSITORY_USERNAME=admin
+    - export REPOSITORY_PASSWORD=$REGISTRY_TOKEN
+    - export GL_TOKEN=$REGISTRY_TOKEN
+    - git config user.email "semantic-release-bot@cloudmali.ml"
+    - git config user.name "semantic-release"
+    - GITLAB_CI=true semantic-release publish --verbosity=DEBUG -D hvcs="gitlab"
+  only:
+    - main
+  artifacts:
+    name: sqlalchemy_wrapper_files
+    paths:
+        - dist/*
