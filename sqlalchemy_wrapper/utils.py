@@ -3,19 +3,18 @@ from __future__ import annotations
 import logging
 from collections import OrderedDict
 from typing import Dict
-from typing import Tuple
+from typing import Type
 
 from sqlalchemy import Column
 from sqlalchemy import inspect
 from sqlalchemy import Table
-from sqlalchemy.orm import InstrumentedAttribute
+from sqlalchemy.orm import DeclarativeMeta
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.orm.util import AliasedClass
 from sqlalchemy.sql.operators import ColumnOperators
 
 
-
-def get_model_from_rel(relation_name: str) -> object:
+def get_model_from_rel(relation_name: str):
     """
     Given a name of column that contains a relationship field (ForeignKeyRel),
     Make an introspection ang get the model that hold the field.
@@ -25,6 +24,7 @@ def get_model_from_rel(relation_name: str) -> object:
     """
 
     from sqlalchemy_wrapper.manager import Manager
+
     all_models = Manager.__subclasses__()[0].__subclasses__()
 
     table_name = relation_name.split(".")[0]
@@ -36,6 +36,8 @@ def get_model_from_rel(relation_name: str) -> object:
 
     if found:
         return found.pop()
+
+    return
 
 
 def get_aliased_model_attrs(aliased_model: AliasedClass, only_fk=False, only_pk=False):
@@ -111,13 +113,9 @@ def _lookup_model_manytomany_rel(ref_key: Column) -> Dict[str, Table]:
     }
 
 
-def _lookup_model_foreign_key(
-    column: Column,
-) -> Tuple[Table, InstrumentedAttribute] or None:
+def _lookup_model_foreign_key(column: Column) -> Table | Type[DeclarativeMeta] | None:
     """
     Retrieve remote model of a foreign key column
-    :param column:
-    :return: Models
     """
 
     if getattr(column, "foreign_keys", None):
@@ -128,9 +126,19 @@ def _lookup_model_foreign_key(
             field_name = column.prop.target.name
         except AttributeError:
             logging.debug(f"Column {column} has no remote field")
-            return
+            return None
 
     return get_model_from_rel(field_name)
+
+
+def get_primary_key(model_instance):
+    """
+    Will not work with composite primary key
+    """
+    try:
+        return [column.name for column in model_instance.__table__.primary_key][0]
+    except (AttributeError, IndexError):
+        logging.error(f"{model_instance} has no primary key")
 
 
 def get_operator(operator):

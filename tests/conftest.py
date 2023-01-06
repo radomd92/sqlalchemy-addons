@@ -5,15 +5,18 @@ import pytest
 from sqlalchemy_wrapper.db.settings import DBSettings
 from sqlalchemy_wrapper.db.settings import DriverEnum
 from sqlalchemy_wrapper.manager import Manager
-from tests.models import User
+from tests.base_model import base_model
 
 test_settings = DBSettings(
     driver=DriverEnum.SQLITE,
     is_test=True,
 )
 
+with open("." + test_settings.sqlite_db_path, "w") as f:
+    pass
+
 # noinspection PyProtectedMember
-User.__table__.create(User.db_context._engine)
+base_model.metadata.create_all(base_model.db_context._engine)
 
 
 @pytest.fixture(scope="class")

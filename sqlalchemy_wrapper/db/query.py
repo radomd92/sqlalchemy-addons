@@ -4,6 +4,7 @@ import copy
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Tuple
 from typing import Union
 
 from sqlalchemy import inspect
@@ -31,9 +32,9 @@ class BaseQueryBuilder:
         if not bool_clause:
             raise ValueError("Resolving path cannot be None")
 
-        self.current = None
-        self.discovered = []
-        self.visited = []
+        self.current = ""
+        self.discovered: List = []
+        self.visited: List = []
         self.base_model = base_model
         self.base_query = session.query(base_model)
         self.complex_filter_clause = bool_clause
@@ -105,7 +106,7 @@ class BaseQueryBuilder:
 
     def run_search(self, operand: Union[And, Or]):
         """
-        Complex expression are which are wrapped into 'And' or 'Or' operator such as: And(column1__like=value, column2__...)
+        Complex expression are which are wrapped into And or 'Or' operator such as: And(column1__like=value, column2__)
         :return:
         """
         for complex_expression in operand.wrapped_expression:
@@ -207,7 +208,7 @@ class BaseQueryBuilder:
 
         return final_expression
 
-    def dive(self, model, path, result: list = None):
+    def dive(self, model, path: List, result: Union[List, None] = None) -> Tuple:
         """
         Given a path, dive in model which through we can reach the final column
         :param path:
@@ -236,7 +237,7 @@ class BaseQueryBuilder:
             for relation_object in many_to_many_rels:
                 if field == relation_object.key:
                     next_model, through_table = _lookup_model_manytomany_rel(
-                        relation_object,
+                        relation_object
                     ).values()
                     is_many_to_many = True
                     break
