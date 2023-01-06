@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sqlalchemy-django-wrapper"
-version = "v0.1.0"
+version = "0.1.1"
 description = "A wrapper on top of sqlalchemy that allow to make django orm style query"
 authors = ["Soumaila <admin@cloudmali.ml>"]
 license = "GNU GPLv3"
