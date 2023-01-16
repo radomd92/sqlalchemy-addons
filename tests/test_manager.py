@@ -11,7 +11,7 @@ class TestManager(TestCase):
     def test_create_simple_object(self):
         create_payload = {"first_name": "soumaila", "last_name": "kouriba"}
         user = User.create(**create_payload)
-        assert user.pk
+        assert user.pks
 
     def test_create_nested_object(self):
         create_payload = {
@@ -24,4 +24,4 @@ class TestManager(TestCase):
         assert File.all()
         assert Item.all()
         assert user.file
-        assert File.get_one(id=user.file).pk == user.file
+        assert File.get_one(id=user.file).pks.get("id") == user.file

@@ -1,21 +1,22 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Type
 from typing import List
 from typing import Tuple
 from typing import Union
 
 from sqlalchemy.inspection import inspect
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, DeclarativeMeta
 
-from sqlalchemy_wrapper.context import DBContext
-from sqlalchemy_wrapper.db.operators import And
-from sqlalchemy_wrapper.db.operators import Or
-from sqlalchemy_wrapper.db.query import BaseQueryBuilder
-from sqlalchemy_wrapper.db.settings import DBSettings
-from sqlalchemy_wrapper.logger import logger as logging
-from sqlalchemy_wrapper.utils import _lookup_model_foreign_key
-from sqlalchemy_wrapper.utils import get_primary_key
+from easy_sqla.context import DBContext
+from easy_sqla.db.operators import And
+from easy_sqla.db.operators import Or
+from easy_sqla.db.query import BaseQueryBuilder
+from easy_sqla.db.selector import CompositePK
+from easy_sqla.db.settings import DBSettings
+from easy_sqla.logger import logger as logging
+from easy_sqla.utils import _lookup_model_foreign_key
+from easy_sqla.utils import get_primary_key
 
 
 class Manager:
@@ -25,8 +26,12 @@ class Manager:
         super().__init__(*args, **kwargs)
 
     @property
-    def pk(self):
-        return getattr(self, get_primary_key(self))
+    def pks(self):
+        """
+        We'll assume that there is just one primary key column inside a table.
+        """
+        pk_attrs = get_primary_key(self.__class__)
+        return {v: getattr(self, v) for v in pk_attrs}
 
     @classmethod
     def set_db_context(cls, context: DBContext):
@@ -104,15 +109,26 @@ class Manager:
         """
 
         for field_name, field_value in data.items():
-            remote_field_model = _lookup_model_foreign_key(
+            remote_field_model: Type[DeclarativeMeta] = _lookup_model_foreign_key(
                 getattr(cls, field_name, None)
             )
             if remote_field_model:
                 logging.info(
                     f"Remote field detected: {remote_field_model.__name__}. Creating a new {remote_field_model.__name__} object"
                 )
-                objekt = remote_field_model.create(**field_value)
-                data.update({field_name: objekt.pk})
+                if isinstance(field_value, dict):
+                    objekt = remote_field_model.create(**field_value)
+
+                elif isinstance(field_value, CompositePK):
+                    objekt = remote_field_model.get_by_pks(**field_value)
+
+                elif isinstance(field_value, (str, int)):
+                    objekt = remote_field_model.get_by_pks(int(field_value))
+
+                if len(objekt.pks) > 1:
+                    raise NotImplemented("Multiple primary key relation object creation not supported yet.")
+
+                data.update({field_name: list(objekt.pks.values())[0]})
 
         return data
 
@@ -132,6 +148,25 @@ class Manager:
     @classmethod
     def all(cls):
         return cls.db_context.session.query(cls).all()
+
+    @classmethod
+    def get_by_pks(cls, *args, **kwargs):
+        """
+        Used to get unique row by name:value or only by value
+        """
+        pks = get_primary_key(cls)
+        undefined_pks = set(pks.keys()).difference(kwargs.keys())
+
+        if len(pks) > 1:
+            if undefined_pks:
+                raise ValueError(f'While using this method, you should specify all pks to be sure at 100% to return only '
+                                 f'one row. Not defined {list(undefined_pks)}')
+        else:
+            # update the kwargs to set the value of the pk field
+            kwargs = dict(zip(pks.keys(), args))
+        return cls.get_one(**kwargs)
+
+
 
     @classmethod
     def get_one(cls, **conditions):
