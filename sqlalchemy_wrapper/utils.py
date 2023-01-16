@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections import OrderedDict
-from typing import Dict
+from typing import Dict, Tuple
 from typing import Type
 
 from sqlalchemy import Column
@@ -23,7 +23,7 @@ def get_model_from_rel(relation_name: str):
     :return: List of model
     """
 
-    from sqlalchemy_wrapper.manager import Manager
+    from easy_sqla.manager import Manager
 
     all_models = Manager.__subclasses__()[0].__subclasses__()
 
@@ -131,14 +131,18 @@ def _lookup_model_foreign_key(column: Column) -> Table | Type[DeclarativeMeta] |
     return get_model_from_rel(field_name)
 
 
-def get_primary_key(model_instance):
-    """
-    Will not work with composite primary key
-    """
+def get_primary_key(model_class: Type[DeclarativeMeta]) -> Dict:
     try:
-        return [column.name for column in model_instance.__table__.primary_key][0]
-    except (AttributeError, IndexError):
-        logging.error(f"{model_instance} has no primary key")
+        mapper_attrs = dict(inspect(model_class).attrs)
+        for column_attr_name, column_object in mapper_attrs.items():
+            # Discard relationship field
+            if not hasattr(column_object, "target"):
+                mapper_attrs.update({column_attr_name: column_object.columns[0]})
+
+        return {attr_name: column for attr_name, column in mapper_attrs.items() if getattr(column, "primary_key", False)}
+    except (AttributeError, IndexError) as e:
+        logging.error(f"{model_class} has no primary key")
+        logging.exception(e)
 
 
 def get_operator(operator):
